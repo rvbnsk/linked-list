@@ -1,1 +1,1 @@
-# linked-list
+C++ Linked list template
