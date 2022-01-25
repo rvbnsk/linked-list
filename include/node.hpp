@@ -1,4 +1,5 @@
 #include <utility>
+#include <vector>
 
 #ifndef NODE_HPP
 #define NODE_HPP
@@ -10,7 +11,7 @@ public:
     T data;
     Node<T> *next;
     Node();
-    Node(T, Node<T> *);
+    Node(const T &, Node<T> *_next = nullptr);
 };
 
 template<typename T>
@@ -22,46 +23,60 @@ private:
     size_t size;
 public:
     List();
-    List(const List<T> &list);
-    List<T> &operator=(const List<T> &list);
-    //List(T *, T *);
+    List(const List<T> &) = delete;
+    List(const List<T> &&) = delete;
+    List<T> &operator=(const List<T> &) = delete;
+    List<T> &operator=(const List<T> &&l) = delete;
     ~List();
+
     size_t get_size();
-    void insert(const T _data);
-    void push_tail(const T _data);
+    void insert(const T &_data);
+    //void push_tail(const T _data);
     void pop();
-    void pop_tail();
-    
+    //void pop_tail();
+    void erase();
+
+    //wyszukiwanie konkretnej wartości 
+    //iterator
+    //std::move
+    //std::copy
 
     template<typename U>
     friend std::ostream &operator<<(std::ostream &, const List<U> &);
 
-    class Iterator
+    class Iterator //klasa dziedzicząca po List
     {
+    private:
         Node<T> *iter;
-    public:
-        Iterator();
         Iterator(Node<T> *);
-        Iterator begin();
-        Iterator end();
-        const T &operator*() const;
+    public:
+        //metoda at - dostęp do konkretnego indeksu
+        Iterator();
+        T &operator*() const;
+        Iterator operator++(int);
         Iterator &operator++();
         bool operator==(const Iterator &_iter) const;
         bool operator!=(const Iterator &_iter) const;
+        friend class List;
     };
+
+    Iterator begin() const;
+    Iterator end() const;
+    Iterator insert(Iterator, const T &);
+    Iterator erase(Iterator);
 };
 
 template<typename T>
 Node<T>::Node() { this -> next = nullptr; }
 
 template<typename T>
-Node<T>::Node(T _data, Node<T> *_next) : data(_data), next(nullptr) {}
+Node<T>::Node(const T &_data, Node<T> *_next) : data(_data), next(_next) {}
 
 template<typename T>
-List<T>::List() { head = nullptr; tail = nullptr; size = 0;}
+List<T>::List() { head = tail = new Node<T>(); size = 0;}
 
 template<typename T>
-void List<T>::insert(const T _data)
+void List<T>::insert(const T &_data)
 {
     auto temp = new Node<T>;
     temp -> data = _data;
@@ -116,13 +131,13 @@ void List<T>::pop()
 template<typename T>
 List<T>::~List()
 {
-    auto current = head;
-    while (current != nullptr)
+    while (head -> next != nullptr)
     {
-        auto next = current -> next;
-        delete current;
-        current = next;
+        auto temp = head;
+        head = head -> next;
+        delete temp;
     }
+    delete head;
 }
 
 template<typename T>
@@ -157,16 +172,24 @@ List<T>::Iterator::Iterator(Node<T> *_iter) : iter(_iter) {}
 
 
 template<typename T>
-const T &List<T>::Iterator::operator*() const
+T &List<T>::Iterator::operator*() const
 {
-    return iter -> data;
+    return iter -> next -> data;
+}
+
+template<typename T>
+typename List<T>::Iterator List<T>::Iterator::operator++(int)
+{
+    Iterator temp = *this;
+    iter = iter -> next;
+    return temp;
 }
 
 template<typename T>
 typename List<T>::Iterator &List<T>::Iterator::operator++()
 {
     iter = iter -> next;
-    return this;
+    return *this;
 }
 
 template<typename T>
@@ -182,15 +205,38 @@ bool List<T>::Iterator::operator==(const Iterator &_iter) const
 }
 
 template<typename T>
-typename List<T>::Iterator List<T>::Iterator::begin()
+typename List<T>::Iterator List<T>::begin() const
 {
     return Iterator(head);
 }
 
 template<typename T>
-typename List<T>::Iterator List<T>::Iterator::end()
+typename List<T>::Iterator List<T>::end() const
 {
-    return Iterator(nullptr);
+    return Iterator(tail);
+}
+
+template<typename T>
+typename List<T>::Iterator List<T>::insert(Iterator index, const T &_data)
+{
+    auto temp = new Node<T>(_data, index.iter -> next);
+    if(index.iter == tail)
+        tail = temp;
+    index.iter -> next = temp;
+
+    return index;
+}
+
+template<typename T>
+typename List<T>::Iterator List<T>::erase(Iterator index)
+{
+    auto _del = index.iter -> next;
+    index.iter -> next = index.iter -> next -> next;
+    if(_del == tail)
+        tail = index.iter;
+    delete _del;
+    
+    return index;
 }
 
 
