@@ -5,12 +5,12 @@ int main()
 {
     List<int> list;
     list.insert(1);
-    /*list.insert(2);
+    list.insert(2);
     list.insert(3);
-    list.insert(4);
-    list.insert(5);
-    list.insert(6);
-    list.insert(7);*/
+    //list.insert(4);
+    //list.insert(5);
+    //list.insert(6);
+    //list.insert(7);
 
 
     std::cout << list << std::endl;
@@ -21,7 +21,7 @@ int main()
 
     //list.pop();
 
-    //std::cout << list;
+    std::cout << std::endl << list;
 
     //list.pop();
 

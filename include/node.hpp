@@ -174,7 +174,7 @@ List<T>::Iterator::Iterator(Node<T> *_iter) : iter(_iter) {}
 template<typename T>
 T &List<T>::Iterator::operator*() const
 {
-    return iter -> next -> data;
+    return iter -> data;
 }
 
 template<typename T>
@@ -213,7 +213,7 @@ typename List<T>::Iterator List<T>::begin() const
 template<typename T>
 typename List<T>::Iterator List<T>::end() const
 {
-    return Iterator(tail);
+    return Iterator(nullptr);
 }
 
 template<typename T>
