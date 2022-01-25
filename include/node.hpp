@@ -1,6 +1,3 @@
-#include <utility>
-#include <vector>
-
 #ifndef NODE_HPP
 #define NODE_HPP
 
@@ -19,32 +16,26 @@ class List
 {
 private:
     Node<T> *head;
-    Node<T> *tail;
     size_t size;
 public:
     List();
     List(const List<T> &) = delete;
     List(const List<T> &&) = delete;
     List<T> &operator=(const List<T> &) = delete;
-    List<T> &operator=(const List<T> &&l) = delete;
+    List<T> &operator=(const List<T> &&) = delete;
+    T operator[](const int &);
+    T at(const int &);
     ~List();
 
     size_t get_size();
     void insert(const T &_data);
-    //void push_tail(const T _data);
     void pop();
-    //void pop_tail();
     void erase();
-
-    //wyszukiwanie konkretnej wartości 
-    //iterator
-    //std::move
-    //std::copy
 
     template<typename U>
     friend std::ostream &operator<<(std::ostream &, const List<U> &);
-
-    class Iterator //klasa dziedzicząca po List
+    
+    class Iterator 
     {
     private:
         Node<T> *iter;
@@ -62,8 +53,6 @@ public:
 
     Iterator begin() const;
     Iterator end() const;
-    Iterator insert(Iterator, const T &);
-    Iterator erase(Iterator);
 };
 
 template<typename T>
@@ -73,7 +62,7 @@ template<typename T>
 Node<T>::Node(const T &_data, Node<T> *_next) : data(_data), next(_next) {}
 
 template<typename T>
-List<T>::List() { head = tail = new Node<T>(); size = 0;}
+List<T>::List() { head = nullptr; size = 0; } 
 
 template<typename T>
 void List<T>::insert(const T &_data)
@@ -84,7 +73,6 @@ void List<T>::insert(const T &_data)
     if(head == nullptr)
     {
         head = temp;
-        tail = temp;
         ++size;
         return;
     }
@@ -129,15 +117,69 @@ void List<T>::pop()
 }
 
 template<typename T>
+void List<T>::erase()
+{
+    if(head != nullptr)
+    {
+        while (head -> next != nullptr)
+        {
+            auto temp = head;
+            head = head -> next;
+            delete temp;
+        }
+        delete head;
+    }
+    head = nullptr;
+    size = 0;
+}
+
+template<typename T>
+T List<T>::operator[](const int &index)
+{
+    int i = 0;
+    auto node = head;
+    while(node != nullptr && i != index)
+    {
+        node = node -> next;
+        ++i;
+    }
+    return node -> data;
+}
+
+template<typename T>
+T List<T>::at(const int &index)
+{
+    if(index < size)
+    {
+        int i = 0;
+        auto node = head;
+        while(node != nullptr && i != index)
+        {
+            node = node -> next;
+            ++i;
+        }
+
+        return node -> data;
+    }
+    else
+    {
+        throw "Out of range\n";
+    }
+}
+
+template<typename T>
 List<T>::~List()
 {
-    while (head -> next != nullptr)
+    if(head != nullptr)
     {
-        auto temp = head;
-        head = head -> next;
-        delete temp;
+        while (head -> next != nullptr)
+        {
+            auto temp = head;
+            head = head -> next;
+            delete temp;
+        }
+        delete head;
     }
-    delete head;
 }
 
 template<typename T>
@@ -215,29 +257,5 @@ typename List<T>::Iterator List<T>::end() const
 {
     return Iterator(nullptr);
 }
-
-template<typename T>
-typename List<T>::Iterator List<T>::insert(Iterator index, const T &_data)
-{
-    auto temp = new Node<T>(_data, index.iter -> next);
-    if(index.iter == tail)
-        tail = temp;
-    index.iter -> next = temp;
-
-    return index;
-}
-
-template<typename T>
-typename List<T>::Iterator List<T>::erase(Iterator index)
-{
-    auto _del = index.iter -> next;
-    index.iter -> next = index.iter -> next -> next;
-    if(_del == tail)
-        tail = index.iter;
-    delete _del;
-    
-    return index;
-}
-
 
 #endif //NODE_HPP

@@ -1,3 +1,7 @@
 .vscode/
 .DS_Store
-src/main
+*.exec
+*.app
+*.dSYM
+*.a
+*.o
