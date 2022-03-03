@@ -2,33 +2,38 @@
 #define NODE_HPP
 
 #include <iostream>
+#include <stdexcept>
+
+namespace detail {
 
 template <typename T>
-class Node {
+struct Node {
    public:
     T data;
     Node<T> *next;
-    Node();
-    Node(const T &, Node<T> *next_ = nullptr);
 };
+
+}  // namespace detail
 
 template <typename T>
 class List {
    private:
-    Node<T> *head;
-    std::size_t size;
+    detail::Node<T> *head = nullptr;
+    std::size_t size_ = 0;
 
    public:
-    List();
-    List(const List<T> &) = delete;
-    List(const List<T> &&) = delete;
-    List<T> &operator=(const List<T> &) = delete;
-    List<T> &operator=(const List<T> &&) = delete;
-    T operator[](const int &);
-    T at(const int &);
+    List() = default;
+    List(const List<T> &) noexcept;
+    List(List<T> &&) noexcept;
+    List<T> &operator=(const List<T> &) noexcept;
+    List<T> &operator=(List<T> &&) noexcept;
+    T &operator[](std::size_t);
+    const T &operator[](std::size_t) const;
+    T &at(std::size_t);
+    const T &at(std::size_t) const;
     ~List();
 
-    std::size_t get_size();
+    std::size_t size() const;
     void insert(const T &data_);
     void pop();
     void erase();
@@ -38,11 +43,10 @@ class List {
 
     class Iterator {
        private:
-        Node<T> *iter;
-        Iterator(Node<T> *);
+        detail::Node<T> *iter{.next = nullptr};
+        Iterator(detail::Node<T> *);
 
        public:
-        // metoda at - dostęp do konkretnego indeksu
         Iterator();
         T &operator*() const;
         Iterator operator++(int);
@@ -57,68 +61,84 @@ class List {
 };
 
 template <typename T>
-Node<T>::Node()
+List<T>::List(const List<T> &list) noexcept : head(nullptr), size_(0)
 {
-    this->next = nullptr;
+    head = list.head;
+    size_ = list.size_;
 }
 
 template <typename T>
-Node<T>::Node(const T &data_, Node<T> *next_) : data(data_), next(next_)
+List<T>::List(List<T> &&list) noexcept : head(nullptr), size_(0)
 {
+    head = list.head;
+    size_ = list.size_;
+
+    list.head = nullptr;
+    list.size_ = 0;
 }
 
 template <typename T>
-List<T>::List()
+List<T> &List<T>::operator=(const List<T> &list) noexcept
 {
-    head = nullptr;
-    size = 0;
+    this->head = list.head;
+    this->size_ = list.size_;
+
+    return *this;
+}
+
+template <typename T>
+List<T> &List<T>::operator=(List<T> &&list) noexcept
+{
+    this->head = list.head;
+    this->size_ = list.size_;
+
+    list.head = nullptr;
+    list.size_ = 0;
+
+    return *this;
 }
 
 template <typename T>
 void List<T>::insert(const T &data_)
 {
-    auto temp = new Node<T>;
+    auto *temp = new detail::Node<T>;
+    temp->next = nullptr;
     temp->data = data_;
 
     if (head == nullptr) {
         head = temp;
-        ++size;
+        ++size_;
         return;
     }
 
     temp->next = head;
     head = temp;
 
-    ++size;
+    ++size_;
 }
 
 template <typename T>
 void List<T>::pop()
 {
-    if (head == nullptr) {
-        std::cout << "list is empty" << std::endl;
-        return;
-    }
+    if (head == nullptr) { return; }
 
     if (head->next == nullptr) {
         head = nullptr;
-        std::cout << "last item removed" << std::endl;
-        --size;
+        --size_;
         return;
     }
 
-    auto temp = head;
+    auto *temp = head;
 
     while (temp != nullptr) {
         if (temp->next->next == nullptr) {
             temp->next = nullptr;
-            std::cout << "last item removed" << std::endl;
             break;
         }
         temp = temp->next;
     }
 
-    --size;
+    --size_;
 }
 
 template <typename T>
@@ -126,21 +146,21 @@ void List<T>::erase()
 {
     if (head != nullptr) {
         while (head->next != nullptr) {
-            auto temp = head;
+            auto *temp = head;
             head = head->next;
             delete temp;
         }
         delete head;
     }
     head = nullptr;
-    size = 0;
+    size_ = 0;
 }
 
 template <typename T>
-T List<T>::operator[](const int &index)
+T &List<T>::operator[](std::size_t index)
 {
-    int i = 0;
-    auto node = head;
+    auto i{0};
+    auto *node = head;
     while (node != nullptr && i != index) {
         node = node->next;
         ++i;
@@ -149,11 +169,23 @@ T List<T>::operator[](const int &index)
 }
 
 template <typename T>
-T List<T>::at(const int &index)
+const T &List<T>::operator[](std::size_t index) const
 {
-    if (index < size) {
-        int i = 0;
-        auto node = head;
+    auto i{0};
+    auto *node = head;
+    while (node != nullptr && i != index) {
+        node = node->next;
+        ++i;
+    }
+    return node->data;
+}
+
+template <typename T>
+T &List<T>::at(std::size_t index)
+{
+    if (index < size_) {
+        auto i{0};
+        auto *node = head;
         while (node != nullptr && i != index) {
             node = node->next;
             ++i;
@@ -162,7 +194,25 @@ T List<T>::at(const int &index)
         return node->data;
     }
     else {
-        throw "Out of range\n";
+        throw std::out_of_range{"List::at"};
+    }
+}
+
+template <typename T>
+const T &List<T>::at(std::size_t index) const
+{
+    if (index < size_) {
+        auto i{0};
+        auto *node = head;
+        while (node != nullptr && i != index) {
+            node = node->next;
+            ++i;
+        }
+
+        return node->data;
+    }
+    else {
+        throw std::out_of_range{"List::at"};
     }
 }
 
@@ -171,32 +221,31 @@ List<T>::~List()
 {
     if (head != nullptr) {
         while (head->next != nullptr) {
-            auto temp = head;
+            auto *temp = head;
             head = head->next;
             delete temp;
         }
         delete head;
     }
+    size_ = 0;
 }
 
 template <typename T>
-std::size_t List<T>::get_size()
+std::size_t List<T>::size() const
 {
-    return size;
+    return size_;
 }
 
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const List<T> &list)
 {
-    if (list.head == nullptr) os << "list empty" << std::endl;
-
-    auto node = list.head;
+    auto *node = list.head;
 
     while (node != nullptr) {
         os << node->data << std::endl;
         node = node->next;
     }
-    os << "size: " << list.size << std::endl;
+    os << "size: " << list.size_ << std::endl;
 
     return os;
 }
@@ -208,7 +257,7 @@ List<T>::Iterator::Iterator()
 }
 
 template <typename T>
-List<T>::Iterator::Iterator(Node<T> *iter_) : iter(iter_)
+List<T>::Iterator::Iterator(detail::Node<T> *iter_) : iter(iter_)
 {
 }
 
