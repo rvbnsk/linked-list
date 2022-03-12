@@ -25,8 +25,8 @@ class List {
     List() = default;
     List(const List<T> &) noexcept;
     List(List<T> &&) noexcept;
-    List<T> &operator=(const List<T> &) noexcept;
-    List<T> &operator=(List<T> &&) noexcept;
+    constexpr List<T> &operator=(const List<T> &) noexcept;
+    constexpr List<T> &operator=(List<T> &&) noexcept;
     T &operator[](std::size_t);
     const T &operator[](std::size_t) const;
     T &at(std::size_t);
@@ -78,7 +78,7 @@ List<T>::List(List<T> &&list) noexcept : head(nullptr), size_(0)
 }
 
 template <typename T>
-List<T> &List<T>::operator=(const List<T> &list) noexcept
+constexpr List<T> &List<T>::operator=(const List<T> &list) noexcept
 {
     this->head = list.head;
     this->size_ = list.size_;
@@ -87,7 +87,7 @@ List<T> &List<T>::operator=(const List<T> &list) noexcept
 }
 
 template <typename T>
-List<T> &List<T>::operator=(List<T> &&list) noexcept
+constexpr List<T> &List<T>::operator=(List<T> &&list) noexcept
 {
     this->head = list.head;
     this->size_ = list.size_;
