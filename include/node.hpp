@@ -23,41 +23,41 @@ class List {
 
    public:
     List() = default;
-    List(const List<T> &) noexcept;
-    List(List<T> &&) noexcept;
-    constexpr List<T> &operator=(const List<T> &) noexcept;
-    constexpr List<T> &operator=(List<T> &&) noexcept;
-    T &operator[](std::size_t);
-    const T &operator[](std::size_t) const;
-    T &at(std::size_t);
-    const T &at(std::size_t) const;
+    List(const List<T> &list) noexcept;
+    List(List<T> &&list) noexcept;
+    constexpr auto operator=(const List<T> &list) noexcept -> List<T> &;
+    constexpr auto operator=(List<T> &&list) noexcept -> List<T> &;
+    auto operator[](std::size_t) -> T &;
+    auto operator[](std::size_t) const -> const T &;
+    auto at(std::size_t) -> T &;
+    auto at(std::size_t) const -> const T &;
     ~List();
 
-    std::size_t size() const;
+    auto size() const -> std::size_t;
     void insert(const T &data_);
     void pop();
     void erase();
 
     template <typename U>
-    friend std::ostream &operator<<(std::ostream &, const List<U> &);
+    friend auto operator<<(std::ostream &, const List<U> &) -> std::ostream &;
 
     class Iterator {
        private:
         detail::Node<T> *iter{.next = nullptr};
-        Iterator(detail::Node<T> *);
+        explicit Iterator(detail::Node<T> *iter_);
 
        public:
         Iterator();
-        T &operator*() const;
-        Iterator operator++(int);
-        Iterator &operator++();
-        bool operator==(const Iterator &iter_) const;
-        bool operator!=(const Iterator &iter_) const;
+        auto operator*() const -> T &;
+        auto operator++(int) -> Iterator;
+        auto operator++() -> Iterator &;
+        auto operator==(const Iterator &iter_) const -> bool;
+        auto operator!=(const Iterator &iter_) const -> bool;
         friend class List;
     };
 
-    Iterator begin() const;
-    Iterator end() const;
+    auto begin() const -> Iterator;
+    auto end() const -> Iterator;
 };
 
 template <typename T>
@@ -78,16 +78,18 @@ List<T>::List(List<T> &&list) noexcept : head(nullptr), size_(0)
 }
 
 template <typename T>
-constexpr List<T> &List<T>::operator=(const List<T> &list) noexcept
+constexpr auto List<T>::operator=(const List<T> &list) noexcept -> List<T> &
 {
-    this->head = list.head;
-    this->size_ = list.size_;
+    if (&list != this) {
+        this->head = list.head;
+        this->size_ = list.size_;
+    }
 
     return *this;
 }
 
 template <typename T>
-constexpr List<T> &List<T>::operator=(List<T> &&list) noexcept
+constexpr auto List<T>::operator=(List<T> &&list) noexcept -> List<T> &
 {
     this->head = list.head;
     this->size_ = list.size_;
@@ -157,7 +159,7 @@ void List<T>::erase()
 }
 
 template <typename T>
-T &List<T>::operator[](std::size_t index)
+auto List<T>::operator[](std::size_t index) -> T &
 {
     auto i{0};
     auto *node = head;
@@ -169,7 +171,7 @@ T &List<T>::operator[](std::size_t index)
 }
 
 template <typename T>
-const T &List<T>::operator[](std::size_t index) const
+auto List<T>::operator[](std::size_t index) const -> const T &
 {
     auto i{0};
     auto *node = head;
@@ -181,7 +183,7 @@ const T &List<T>::operator[](std::size_t index) const
 }
 
 template <typename T>
-T &List<T>::at(std::size_t index)
+auto List<T>::at(std::size_t index) -> T &
 {
     if (index < size_) {
         auto i{0};
@@ -199,7 +201,7 @@ T &List<T>::at(std::size_t index)
 }
 
 template <typename T>
-const T &List<T>::at(std::size_t index) const
+auto List<T>::at(std::size_t index) const -> const T &
 {
     if (index < size_) {
         auto i{0};
@@ -231,13 +233,13 @@ List<T>::~List()
 }
 
 template <typename T>
-std::size_t List<T>::size() const
+auto List<T>::size() const -> std::size_t
 {
     return size_;
 }
 
 template <typename T>
-std::ostream &operator<<(std::ostream &os, const List<T> &list)
+auto operator<<(std::ostream &os, const List<T> &list) -> std::ostream &
 {
     auto *node = list.head;
 
@@ -262,13 +264,13 @@ List<T>::Iterator::Iterator(detail::Node<T> *iter_) : iter(iter_)
 }
 
 template <typename T>
-T &List<T>::Iterator::operator*() const
+auto List<T>::Iterator::operator*() const -> T &
 {
     return iter->data;
 }
 
 template <typename T>
-typename List<T>::Iterator List<T>::Iterator::operator++(int)
+auto List<T>::Iterator::operator++(int) -> typename List<T>::Iterator
 {
     Iterator temp = *this;
     iter = iter->next;
@@ -276,32 +278,32 @@ typename List<T>::Iterator List<T>::Iterator::operator++(int)
 }
 
 template <typename T>
-typename List<T>::Iterator &List<T>::Iterator::operator++()
+auto List<T>::Iterator::operator++() -> typename List<T>::Iterator &
 {
     iter = iter->next;
     return *this;
 }
 
 template <typename T>
-bool List<T>::Iterator::operator!=(const Iterator &iter_) const
+auto List<T>::Iterator::operator!=(const Iterator &iter_) const -> bool
 {
     return iter != iter_.iter;
 }
 
 template <typename T>
-bool List<T>::Iterator::operator==(const Iterator &iter_) const
+auto List<T>::Iterator::operator==(const Iterator &iter_) const -> bool
 {
     return !(iter != iter_.iter);
 }
 
 template <typename T>
-typename List<T>::Iterator List<T>::begin() const
+auto List<T>::begin() const -> typename List<T>::Iterator
 {
     return Iterator(head);
 }
 
 template <typename T>
-typename List<T>::Iterator List<T>::end() const
+auto List<T>::end() const -> typename List<T>::Iterator
 {
     return Iterator(nullptr);
 }
