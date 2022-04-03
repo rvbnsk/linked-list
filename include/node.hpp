@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 namespace detail {
 
@@ -31,6 +32,8 @@ class List {
     auto operator[](std::size_t) const -> const T &;
     auto at(std::size_t) -> T &;
     auto at(std::size_t) const -> const T &;
+    auto indices() -> std::vector<std::size_t>;
+    auto indices() const -> std::vector<std::size_t>;
     ~List();
 
     auto size() const -> std::size_t;
@@ -41,23 +44,31 @@ class List {
     template <typename U>
     friend auto operator<<(std::ostream &, const List<U> &) -> std::ostream &;
 
-    class Iterator {
+    template <typename T1, typename T2>
+    friend inline auto operator==(const List<T1> &lhs, const List<T2> &rhs)
+        -> bool;
+
+    template <typename T1, typename T2>
+    friend inline auto operator!=(const List<T1> &lhs, const List<T2> &rhs)
+        -> bool;
+
+    class iterator {
        private:
         detail::Node<T> *iter{.next = nullptr};
-        explicit Iterator(detail::Node<T> *iter_);
+        explicit iterator(detail::Node<T> *iter_);
 
        public:
-        Iterator();
+        iterator();
         auto operator*() const -> T &;
-        auto operator++(int) -> Iterator;
-        auto operator++() -> Iterator &;
-        auto operator==(const Iterator &iter_) const -> bool;
-        auto operator!=(const Iterator &iter_) const -> bool;
+        auto operator++(int) -> iterator;
+        auto operator++() -> iterator &;
+        auto operator==(const iterator &iter_) const -> bool;
+        auto operator!=(const iterator &iter_) const -> bool;
         friend class List;
     };
 
-    auto begin() const -> Iterator;
-    auto end() const -> Iterator;
+    auto begin() const -> iterator;
+    auto end() const -> iterator;
 };
 
 template <typename T>
@@ -98,6 +109,22 @@ constexpr auto List<T>::operator=(List<T> &&list) noexcept -> List<T> &
     list.size_ = 0;
 
     return *this;
+}
+
+template <typename T1, typename T2>
+inline auto operator==(const List<T1> &lhs, const List<T2> &rhs) -> bool
+{
+    if (!(std::is_same_v<T1, T2>)) { return false; }
+    for (const auto i : lhs.indices()) {
+        if (lhs[i] != rhs[i]) { return false; }
+    }
+    return true;
+}
+
+template <typename T1, typename T2>
+inline auto operator!=(const List<T1> &lhs, const List<T2> &rhs) -> bool
+{
+    return !(lhs == rhs);
 }
 
 template <typename T>
@@ -219,6 +246,22 @@ auto List<T>::at(std::size_t index) const -> const T &
 }
 
 template <typename T>
+auto List<T>::indices() -> std::vector<std::size_t>
+{
+    std::vector<std::size_t> result;
+    for (int i = 0; i < this->size(); ++i) { result.push_back(i); }
+    return result;
+}
+
+template <typename T>
+auto List<T>::indices() const -> std::vector<std::size_t>
+{
+    std::vector<std::size_t> result;
+    for (int i = 0; i < this->size(); ++i) { result.push_back(i); }
+    return result;
+}
+
+template <typename T>
 List<T>::~List()
 {
     if (head != nullptr) {
@@ -253,59 +296,59 @@ auto operator<<(std::ostream &os, const List<T> &list) -> std::ostream &
 }
 
 template <typename T>
-List<T>::Iterator::Iterator()
+List<T>::iterator::iterator()
 {
     iter = nullptr;
 }
 
 template <typename T>
-List<T>::Iterator::Iterator(detail::Node<T> *iter_) : iter(iter_)
+List<T>::iterator::iterator(detail::Node<T> *iter_) : iter(iter_)
 {
 }
 
 template <typename T>
-auto List<T>::Iterator::operator*() const -> T &
+auto List<T>::iterator::operator*() const -> T &
 {
     return iter->data;
 }
 
 template <typename T>
-auto List<T>::Iterator::operator++(int) -> typename List<T>::Iterator
+auto List<T>::iterator::operator++(int) -> typename List<T>::iterator
 {
-    Iterator temp = *this;
+    iterator temp = *this;
     iter = iter->next;
     return temp;
 }
 
 template <typename T>
-auto List<T>::Iterator::operator++() -> typename List<T>::Iterator &
+auto List<T>::iterator::operator++() -> typename List<T>::iterator &
 {
     iter = iter->next;
     return *this;
 }
 
 template <typename T>
-auto List<T>::Iterator::operator!=(const Iterator &iter_) const -> bool
+auto List<T>::iterator::operator!=(const iterator &iter_) const -> bool
 {
     return iter != iter_.iter;
 }
 
 template <typename T>
-auto List<T>::Iterator::operator==(const Iterator &iter_) const -> bool
+auto List<T>::iterator::operator==(const iterator &iter_) const -> bool
 {
     return !(iter != iter_.iter);
 }
 
 template <typename T>
-auto List<T>::begin() const -> typename List<T>::Iterator
+auto List<T>::begin() const -> typename List<T>::iterator
 {
-    return Iterator(head);
+    return iterator(head);
 }
 
 template <typename T>
-auto List<T>::end() const -> typename List<T>::Iterator
+auto List<T>::end() const -> typename List<T>::iterator
 {
-    return Iterator(nullptr);
+    return iterator(nullptr);
 }
 
 #endif  // NODE_HPP
