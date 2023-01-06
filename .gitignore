@@ -1,4 +1,5 @@
 .vscode/
+build/
 .DS_Store
 *.exe
 *.exec
