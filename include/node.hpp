@@ -19,8 +19,8 @@ struct Node {
 template <typename T>
 class List {
    private:
-    detail::Node<T> *head = nullptr;
-    std::size_t size_ = 0;
+    detail::Node<T> *head{nullptr};
+    std::size_t size_{0};
 
    public:
     List() = default;
@@ -72,18 +72,14 @@ class List {
 };
 
 template <typename T>
-List<T>::List(const List<T> &list) noexcept : head(nullptr), size_(0)
+List<T>::List(const List<T> &list) noexcept : head(list.head), size_(list.size_)
 {
-    head = list.head;
-    size_ = list.size_;
 }
 
 template <typename T>
-List<T>::List(List<T> &&list) noexcept : head(nullptr), size_(0)
+List<T>::List(List<T> &&list) noexcept : head(list.head), size_(list.size_)
 {
-    head = list.head;
-    size_ = list.size_;
-
+    list.~List();
     list.head = nullptr;
     list.size_ = 0;
 }
@@ -249,7 +245,7 @@ template <typename T>
 auto List<T>::indices() -> std::vector<std::size_t>
 {
     std::vector<std::size_t> result;
-    for (int i = 0; i < this->size(); ++i) { result.push_back(i); }
+    for (std::size_t i = 0; i < size(); ++i) { result.push_back(i); }
     return result;
 }
 
@@ -257,7 +253,7 @@ template <typename T>
 auto List<T>::indices() const -> std::vector<std::size_t>
 {
     std::vector<std::size_t> result;
-    for (int i = 0; i < this->size(); ++i) { result.push_back(i); }
+    for (std::size_t i = 0; i < size(); ++i) { result.push_back(i); }
     return result;
 }
 
