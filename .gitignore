@@ -1,5 +1,6 @@
 .vscode/
 build/
+proj/
 .DS_Store
 *.exe
 *.exec

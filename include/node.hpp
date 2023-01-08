@@ -5,102 +5,122 @@
 #include <stdexcept>
 #include <vector>
 
+namespace lst {
+
 namespace detail {
 
 template <typename T>
 struct Node {
    public:
     T data;
-    Node<T> *next;
+    Node<T>* next;
 };
 
 }  // namespace detail
 
+// NOLINTBEGIN(hicpp-named-parameter,readability-named-parameter)
 template <typename T>
 class List {
    private:
-    detail::Node<T> *head{nullptr};
+    detail::Node<T>* head{nullptr};
     std::size_t size_{0};
 
    public:
-    List() = default;
-    List(const List<T> &list) noexcept;
-    List(List<T> &&list) noexcept;
-    constexpr auto operator=(const List<T> &list) noexcept -> List<T> &;
-    constexpr auto operator=(List<T> &&list) noexcept -> List<T> &;
-    auto operator[](std::size_t) -> T &;
-    auto operator[](std::size_t) const -> const T &;
-    auto at(std::size_t) -> T &;
-    auto at(std::size_t) const -> const T &;
+    constexpr List() = default;
+    constexpr List(std::initializer_list<T>);
+    constexpr List(const List<T>&) noexcept;
+    constexpr List(List<T>&&) noexcept;
+    constexpr ~List();
+
+    constexpr auto operator=(const List<T>&) noexcept -> List<T>&;
+    constexpr auto operator=(List<T>&&) noexcept -> List<T>&;
+
+    auto operator[](std::size_t) -> T&;
+    auto operator[](std::size_t) const -> const T&;
+    auto at(std::size_t) -> T&;
+    auto at(std::size_t) const -> const T&;
     auto indices() -> std::vector<std::size_t>;
     auto indices() const -> std::vector<std::size_t>;
-    ~List();
 
     auto size() const -> std::size_t;
-    void insert(const T &data_);
-    void pop();
-    void erase();
+    auto insert(const T&, std::size_t);
+    auto push_back(const T&);
+    auto pop();
+    auto pop(std::size_t);
+    auto remove(const T&);
+    auto clear();
+
+    auto sort(bool = true);
+    auto reverse();
 
     template <typename U>
-    friend auto operator<<(std::ostream &, const List<U> &) -> std::ostream &;
+    friend constexpr auto operator<<(std::ostream&, const List<U>&)
+        -> std::ostream&;
 
     template <typename T1, typename T2>
-    friend inline auto operator==(const List<T1> &lhs, const List<T2> &rhs)
+    friend constexpr auto operator==(const List<T1>& lhs, const List<T2>& rhs)
         -> bool;
 
     template <typename T1, typename T2>
-    friend inline auto operator!=(const List<T1> &lhs, const List<T2> &rhs)
+    friend constexpr auto operator!=(const List<T1>& lhs, const List<T2>& rhs)
         -> bool;
 
     class iterator {
        private:
-        detail::Node<T> *iter{.next = nullptr};
-        explicit iterator(detail::Node<T> *iter_);
+        detail::Node<T>* iter{.next = nullptr};
+        explicit constexpr iterator(detail::Node<T>*);
 
        public:
         iterator();
-        auto operator*() const -> T &;
+        auto operator*() const -> T&;
         auto operator++(int) -> iterator;
-        auto operator++() -> iterator &;
-        auto operator==(const iterator &iter_) const -> bool;
-        auto operator!=(const iterator &iter_) const -> bool;
+        auto operator++() -> iterator&;
+        auto operator==(const iterator&) const -> bool;
+        auto operator!=(const iterator&) const -> bool;
         friend class List;
     };
 
     auto begin() const -> iterator;
     auto end() const -> iterator;
 };
+// NOLINTEND(hicpp-named-parameter,readability-named-parameter)
 
 template <typename T>
-List<T>::List(const List<T> &list) noexcept : head(list.head), size_(list.size_)
+constexpr List<T>::List(std::initializer_list<T> elems)
 {
+    for (const auto& elem : elems) { push_back(elem); }
 }
 
 template <typename T>
-List<T>::List(List<T> &&list) noexcept : head(list.head), size_(list.size_)
+constexpr List<T>::List(const List<T>& list) noexcept
 {
-    list.~List();
-    list.head = nullptr;
-    list.size_ = 0;
+    *this = list;
 }
 
 template <typename T>
-constexpr auto List<T>::operator=(const List<T> &list) noexcept -> List<T> &
+constexpr List<T>::List(List<T>&& list) noexcept
+{
+    *this = std::move(list);
+}
+
+template <typename T>
+constexpr auto List<T>::operator=(const List<T>& list) noexcept -> List<T>&
 {
     if (&list != this) {
-        this->head = list.head;
-        this->size_ = list.size_;
+        for (const auto elem : list) { push_back(elem); }
     }
 
     return *this;
 }
 
 template <typename T>
-constexpr auto List<T>::operator=(List<T> &&list) noexcept -> List<T> &
+constexpr auto List<T>::operator=(List<T>&& list) noexcept -> List<T>&
 {
-    this->head = list.head;
-    this->size_ = list.size_;
+    if (&list != this) {
+        for (const auto elem : list) { push_back(elem); }
+    }
 
+    list.clear();
     list.head = nullptr;
     list.size_ = 0;
 
@@ -108,42 +128,50 @@ constexpr auto List<T>::operator=(List<T> &&list) noexcept -> List<T> &
 }
 
 template <typename T1, typename T2>
-inline auto operator==(const List<T1> &lhs, const List<T2> &rhs) -> bool
+constexpr auto operator==(const List<T1>& lhs, const List<T2>& rhs) -> bool
 {
-    if (!(std::is_same_v<T1, T2>)) { return false; }
-    for (const auto i : lhs.indices()) {
-        if (lhs[i] != rhs[i]) { return false; }
+    if constexpr (not std::is_same_v<T1, T2>) { return false; }
+    for (const auto index : lhs.indices()) {
+        if (lhs[index] != rhs[index]) { return false; }
     }
     return true;
 }
 
 template <typename T1, typename T2>
-inline auto operator!=(const List<T1> &lhs, const List<T2> &rhs) -> bool
+constexpr auto operator!=(const List<T1>& lhs, const List<T2>& rhs) -> bool
 {
-    return !(lhs == rhs);
+    return not lhs == rhs;
 }
 
 template <typename T>
-void List<T>::insert(const T &data_)
+auto List<T>::insert(const T& data, std::size_t index)
 {
-    auto *temp = new detail::Node<T>;
-    temp->next = nullptr;
-    temp->data = data_;
+    if (index > size_) { throw std::out_of_range("Index out of range"); }
 
-    if (head == nullptr) {
-        head = temp;
-        ++size_;
-        return;
+    auto new_node = new detail::Node<T>{.data{data}, .next{nullptr}};
+
+    if (index == 0) {
+        new_node->next = head;
+        head = new_node;
     }
-
-    temp->next = head;
-    head = temp;
+    else {
+        detail::Node<T>* current = head;
+        while (--index != 0U) { current = current->next; }
+        new_node->next = current->next;
+        current->next = new_node;
+    }
 
     ++size_;
 }
 
 template <typename T>
-void List<T>::pop()
+auto List<T>::push_back(const T& data)
+{
+    insert(data, size_);
+}
+
+template <typename T>
+auto List<T>::pop()
 {
     if (head == nullptr) { return; }
 
@@ -153,7 +181,7 @@ void List<T>::pop()
         return;
     }
 
-    auto *temp = head;
+    auto* temp = head;
 
     while (temp != nullptr) {
         if (temp->next->next == nullptr) {
@@ -167,11 +195,46 @@ void List<T>::pop()
 }
 
 template <typename T>
-void List<T>::erase()
+auto List<T>::pop(std::size_t index)
+{
+    if (index >= size_) { throw std::out_of_range("Index out of range"); }
+
+    detail::Node<T>* current = head;
+    if (index == 0) {
+        head = head->next;
+        delete current;
+        size_--;
+        return;
+    }
+
+    detail::Node<T>* prev = nullptr;
+    while (index-- != 0U) {
+        prev = current;
+        current = current->next;
+    }
+
+    prev->next = current->next;
+    delete current;
+    size_--;
+}
+
+template <typename T>
+auto List<T>::remove(const T& value)
+{
+    for (std::size_t idx = 0; idx < size_; idx++) {
+        if ((*this)[idx] == value) {
+            pop(idx);
+            idx--;
+        }
+    }
+}
+
+template <typename T>
+auto List<T>::clear()
 {
     if (head != nullptr) {
         while (head->next != nullptr) {
-            auto *temp = head;
+            const auto* temp = head;
             head = head->next;
             delete temp;
         }
@@ -182,63 +245,70 @@ void List<T>::erase()
 }
 
 template <typename T>
-auto List<T>::operator[](std::size_t index) -> T &
+auto List<T>::sort(bool ascending)
 {
-    auto i{0};
-    auto *node = head;
-    while (node != nullptr && i != index) {
+    if (size_ == 0) { return; }
+
+    if (ascending) { std::sort(begin(), end()); }
+    else {
+        std::sort(begin(), end(), std::greater<T>());
+    }
+}
+
+template <typename T>
+auto List<T>::reverse()
+{
+    std::reverse(begin(), end());
+}
+
+template <typename T>
+auto List<T>::operator[](std::size_t index) -> T&
+{
+    auto idx{0};
+    auto* node = head;
+    while (node != nullptr and idx != index) {
         node = node->next;
-        ++i;
+        ++idx;
     }
     return node->data;
 }
 
 template <typename T>
-auto List<T>::operator[](std::size_t index) const -> const T &
+auto List<T>::operator[](std::size_t index) const -> const T&
 {
-    auto i{0};
-    auto *node = head;
-    while (node != nullptr && i != index) {
+    std::size_t idx{0};
+    auto* node = head;
+    while (node != nullptr and idx != index) {
         node = node->next;
-        ++i;
+        ++idx;
     }
     return node->data;
 }
 
 template <typename T>
-auto List<T>::at(std::size_t index) -> T &
+auto List<T>::at(std::size_t index) -> T&
 {
-    if (index < size_) {
-        auto i{0};
-        auto *node = head;
-        while (node != nullptr && i != index) {
-            node = node->next;
-            ++i;
-        }
-
-        return node->data;
+    if (index > size_) { throw std::out_of_range{"List::at"}; }
+    std::size_t idx{0};
+    auto* node = head;
+    while (node != nullptr and idx != index) {
+        node = node->next;
+        ++idx;
     }
-    else {
-        throw std::out_of_range{"List::at"};
-    }
+    return node->data;
 }
 
 template <typename T>
-auto List<T>::at(std::size_t index) const -> const T &
+auto List<T>::at(std::size_t index) const -> const T&
 {
-    if (index < size_) {
-        auto i{0};
-        auto *node = head;
-        while (node != nullptr && i != index) {
-            node = node->next;
-            ++i;
-        }
-
-        return node->data;
+    if (index > size_) { throw std::out_of_range{"List::at"}; }
+    auto idx{0};
+    auto* node = head;
+    while (node != nullptr and idx != index) {
+        node = node->next;
+        ++idx;
     }
-    else {
-        throw std::out_of_range{"List::at"};
-    }
+    return node->data;
 }
 
 template <typename T>
@@ -258,11 +328,11 @@ auto List<T>::indices() const -> std::vector<std::size_t>
 }
 
 template <typename T>
-List<T>::~List()
+constexpr List<T>::~List()
 {
     if (head != nullptr) {
         while (head->next != nullptr) {
-            auto *temp = head;
+            const auto* temp = head;
             head = head->next;
             delete temp;
         }
@@ -278,9 +348,11 @@ auto List<T>::size() const -> std::size_t
 }
 
 template <typename T>
-auto operator<<(std::ostream &os, const List<T> &list) -> std::ostream &
+// NOLINTNEXTLINE(readability-identifier-length)
+constexpr auto operator<<(std::ostream& os, const List<T>& list)
+    -> std::ostream&
 {
-    auto *node = list.head;
+    auto* node = list.head;
 
     while (node != nullptr) {
         os << node->data << std::endl;
@@ -292,18 +364,17 @@ auto operator<<(std::ostream &os, const List<T> &list) -> std::ostream &
 }
 
 template <typename T>
-List<T>::iterator::iterator()
-{
-    iter = nullptr;
-}
-
-template <typename T>
-List<T>::iterator::iterator(detail::Node<T> *iter_) : iter(iter_)
+List<T>::iterator::iterator() : iter{nullptr}
 {
 }
 
 template <typename T>
-auto List<T>::iterator::operator*() const -> T &
+constexpr List<T>::iterator::iterator(detail::Node<T>* iter_) : iter{iter_}
+{
+}
+
+template <typename T>
+auto List<T>::iterator::operator*() const -> T&
 {
     return iter->data;
 }
@@ -317,20 +388,20 @@ auto List<T>::iterator::operator++(int) -> typename List<T>::iterator
 }
 
 template <typename T>
-auto List<T>::iterator::operator++() -> typename List<T>::iterator &
+auto List<T>::iterator::operator++() -> typename List<T>::iterator&
 {
     iter = iter->next;
     return *this;
 }
 
 template <typename T>
-auto List<T>::iterator::operator!=(const iterator &iter_) const -> bool
+auto List<T>::iterator::operator!=(const iterator& iter_) const -> bool
 {
     return iter != iter_.iter;
 }
 
 template <typename T>
-auto List<T>::iterator::operator==(const iterator &iter_) const -> bool
+auto List<T>::iterator::operator==(const iterator& iter_) const -> bool
 {
     return !(iter != iter_.iter);
 }
@@ -346,5 +417,7 @@ auto List<T>::end() const -> typename List<T>::iterator
 {
     return iterator(nullptr);
 }
+
+}  // namespace lst
 
 #endif  // NODE_HPP
