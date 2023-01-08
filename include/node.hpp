@@ -130,6 +130,7 @@ constexpr auto List<T>::operator=(List<T>&& list) noexcept -> List<T>&
 template <typename T1, typename T2>
 constexpr auto operator==(const List<T1>& lhs, const List<T2>& rhs) -> bool
 {
+    if (lhs.size() != rhs.size()) { return false; }
     if constexpr (not std::is_same_v<T1, T2>) { return false; }
     for (const auto index : lhs.indices()) {
         if (lhs[index] != rhs[index]) { return false; }
@@ -140,7 +141,7 @@ constexpr auto operator==(const List<T1>& lhs, const List<T2>& rhs) -> bool
 template <typename T1, typename T2>
 constexpr auto operator!=(const List<T1>& lhs, const List<T2>& rhs) -> bool
 {
-    return not lhs == rhs;
+    return not(lhs == rhs);
 }
 
 template <typename T>

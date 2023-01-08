@@ -24,6 +24,10 @@ TEST_CASE("Creating object by initializer list and push_back comparison")
     list2.push_back(2);
 
     REQUIRE(list == list2);
+
+    const List list3;
+    CHECK(list != list3);
+    CHECK(list2 != list3);
 }
 
 TEST_CASE("Copying object and comparison operator")
